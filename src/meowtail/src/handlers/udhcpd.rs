@@ -36,11 +36,17 @@ struct RemoveLeasePayload {
     mac: String,
 }
 
-// 新增: 修改网络接口的请求体
 #[derive(Deserialize)]
 struct InterfacePayload {
     interface: String,
 }
+
+// 新增: 修改子网掩码的请求体
+#[derive(Deserialize)]
+struct SubnetPayload {
+    subnet: String,
+}
+
 
 // --- 处理器 (Handlers) ---
 
@@ -112,7 +118,23 @@ async fn set_gateway(
     Ok(HttpResponse::Ok().json(json!({"status": "Gateway updated"})))
 }
 
-// 新增: 修改网络接口的处理器
+// 新增: 修改子网掩码的处理器
+#[post("/config/subnet")]
+async fn set_subnet_mask(
+    manager: web::Data<UdhcpdManager>,
+    payload: web::Json<SubnetPayload>,
+) -> Result<impl Responder, UdhcpdError> {
+    let subnet_mask = Ipv4Addr::from_str(&payload.subnet)
+        .map_err(|_| UdhcpdError::InvalidInput("Invalid subnet mask".to_string()))?;
+
+    web::block(move || manager.set_subnet_mask(subnet_mask))
+        .await
+        .map_err(|e| UdhcpdError::Process(e.to_string()))??;
+
+    Ok(HttpResponse::Ok().json(json!({"status": "Subnet mask updated"})))
+}
+
+
 #[post("/config/interface")]
 async fn set_interface(
     manager: web::Data<UdhcpdManager>,
@@ -194,7 +216,8 @@ pub fn service() -> Scope {
         .service(get_config)
         .service(set_range)
         .service(set_gateway)
-        .service(set_interface) // 新增: 注册接口路由
+        .service(set_interface)
+        .service(set_subnet_mask) // 新增: 注册接口路由
         .service(set_dns)
         .service(add_lease)
         .service(remove_lease)
