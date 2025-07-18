@@ -1,12 +1,12 @@
 [package]
 name = "meowtail"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 daemonize = "0.5"
 actix-web = "4"
-nix = { version = "0.29.0", features = ["user","signal", "process"] }
+nix = { version = "0.29.0", features = ["user", "signal", "process"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 jsonwebtoken = "8"
@@ -14,3 +14,5 @@ chrono = { version = "0.4", features = ["serde"] }
 futures-util = "0.3"
 thiserror = "1.0"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+toml = "0.8"
+rand = "0.8"
