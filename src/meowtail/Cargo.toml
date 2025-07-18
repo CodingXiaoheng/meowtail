@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 daemonize = "0.5"
 actix-web = "4"
+actix-files = "0.6"
 nix = { version = "0.29.0", features = ["user", "signal", "process"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -16,3 +17,16 @@ thiserror = "1.0"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 toml = "0.8"
 rand = "0.8"
+
+[dependencies.zstd-sys]
+version = "2"
+features = ["no_asm"]
+
+[target.armv7-unknown-linux-musleabi]
+linker = "arm-linux-musleabi-gcc"
+ar = "arm-linux-musleabihf-ar"
+
+[target.armv7-unknown-linux-musleabi.env]
+CC_armv7_unknown_linux_musleabi = "arm-linux-musleabi-gcc"
+AR_armv7_unknown_linux_musleabi = "arm-linux-musleabi-ar"
+CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABI_LINKER = "arm-linux-musleabi-gcc"

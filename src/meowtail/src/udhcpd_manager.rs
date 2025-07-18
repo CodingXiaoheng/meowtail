@@ -6,6 +6,8 @@ use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
+// 新增: 引入 Mutex 来解决并发问题
+use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 
@@ -159,6 +161,8 @@ pub struct UdhcpdManager {
     executable_path: String,
     config_path: PathBuf,
     pid_path: PathBuf,
+    // 修改: 增加一个互斥锁来保护对配置文件的并发访问
+    config_lock: Mutex<()>,
 }
 
 impl UdhcpdManager {
@@ -171,6 +175,8 @@ impl UdhcpdManager {
             executable_path: executable_path.to_string(),
             config_path: config_path.into(),
             pid_path: pid_path.into(),
+            // 修改: 初始化互斥锁
+            config_lock: Mutex::new(()),
         }
     }
 
@@ -187,18 +193,13 @@ impl UdhcpdManager {
             )));
         }
 
-        // --- 核心修改 ---
-        // 1. 使用 .spawn() 启动进程，以便立即获取其句柄和 PID
         let child = Command::new(&self.executable_path)
             .arg(self.config_path.to_str().unwrap())
-            // 移除了 `-p` 参数，因为我们自己管理 PID 文件
             .spawn()
             .map_err(|e| UdhcpdError::Io(e))?;
 
-        // 2. 获取子进程的 PID
         let pid = child.id();
 
-        // 3. 将 PID 写入我们自己管理的 PID 文件
         fs::write(&self.pid_path, pid.to_string())
             .map_err(|e| UdhcpdError::PidFile(format!("Failed to write PID file: {}", e)))?;
 
@@ -216,7 +217,6 @@ impl UdhcpdManager {
 
         for _ in 0..30 {
             if !self.is_process_alive(pid) {
-                // 成功停止后，删除我们自己创建的 PID 文件
                 let _ = fs::remove_file(&self.pid_path);
                 return Ok(());
             }
@@ -228,7 +228,6 @@ impl UdhcpdManager {
             signal::kill(pid, Signal::SIGKILL)?;
         }
 
-        // 强制杀死后也删除 PID 文件
         let _ = fs::remove_file(&self.pid_path);
         Ok(())
     }
@@ -259,7 +258,6 @@ impl UdhcpdManager {
     }
 
     fn is_process_alive(&self, pid: Pid) -> bool {
-        // 使用 kill -0 检查进程是否存在。如果PID文件是过时的，这将返回错误。
         signal::kill(pid, None).is_ok()
     }
 
@@ -272,6 +270,9 @@ impl UdhcpdManager {
     }
 
     pub fn create_config_with_defaults(&self, interface: &str, overwrite: bool) -> Result<()> {
+        // 修改: 在修改文件前获取锁
+        let _guard = self.config_lock.lock().map_err(|e| UdhcpdError::Process(format!("Failed to acquire config lock: {}", e)))?;
+
         if self.config_path.exists() && !overwrite {
             return Err(UdhcpdError::Io(io::Error::new(
                 io::ErrorKind::AlreadyExists,
@@ -297,7 +298,10 @@ impl UdhcpdManager {
         self.write_config(&default_config)
     }
 
+    // --- 以下所有修改配置的方法都增加了锁保护 ---
+
     pub fn set_dhcp_range(&self, start: Ipv4Addr, end: Ipv4Addr) -> Result<()> {
+        let _guard = self.config_lock.lock().map_err(|e| UdhcpdError::Process(format!("Failed to acquire config lock: {}", e)))?;
         let mut config = self.read_config()?;
         config.start = Some(start);
         config.end = Some(end);
@@ -305,30 +309,35 @@ impl UdhcpdManager {
     }
 
     pub fn set_subnet_mask(&self, mask: Ipv4Addr) -> Result<()> {
+        let _guard = self.config_lock.lock().map_err(|e| UdhcpdError::Process(format!("Failed to acquire config lock: {}", e)))?;
         let mut config = self.read_config()?;
         config.subnet_mask = Some(mask);
         self.write_config(&config)
     }
 
     pub fn set_dns_servers(&self, servers: Vec<Ipv4Addr>) -> Result<()> {
+        let _guard = self.config_lock.lock().map_err(|e| UdhcpdError::Process(format!("Failed to acquire config lock: {}", e)))?;
         let mut config = self.read_config()?;
         config.dns_servers = servers;
         self.write_config(&config)
     }
 
     pub fn set_gateway(&self, gateway: Ipv4Addr) -> Result<()> {
+        let _guard = self.config_lock.lock().map_err(|e| UdhcpdError::Process(format!("Failed to acquire config lock: {}", e)))?;
         let mut config = self.read_config()?;
         config.router = Some(gateway);
         self.write_config(&config)
     }
 
     pub fn set_interface(&self, interface: String) -> Result<()> {
+        let _guard = self.config_lock.lock().map_err(|e| UdhcpdError::Process(format!("Failed to acquire config lock: {}", e)))?;
         let mut config = self.read_config()?;
         config.interface = Some(interface);
         self.write_config(&config)
     }
 
     pub fn add_or_update_static_lease(&self, lease: StaticLease) -> Result<()> {
+        let _guard = self.config_lock.lock().map_err(|e| UdhcpdError::Process(format!("Failed to acquire config lock: {}", e)))?;
         let mut config = self.read_config()?;
         if let Some(existing_lease) = config.static_leases.iter_mut().find(|l| l.mac == lease.mac)
         {
@@ -340,6 +349,7 @@ impl UdhcpdManager {
     }
 
     pub fn remove_static_lease(&self, mac_address: &str) -> Result<()> {
+        let _guard = self.config_lock.lock().map_err(|e| UdhcpdError::Process(format!("Failed to acquire config lock: {}", e)))?;
         let mut config = self.read_config()?;
         config.static_leases.retain(|l| l.mac != mac_address);
         self.write_config(&config)

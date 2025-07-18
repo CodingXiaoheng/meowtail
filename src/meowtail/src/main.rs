@@ -7,6 +7,7 @@ use std::sync::Mutex;
 use actix_web::{web, App, HttpServer};
 use daemonize::Daemonize;
 use nix::unistd::getuid;
+use actix_files as fs;
 
 // 引入模块
 mod handlers;
@@ -98,19 +99,22 @@ fn main() {
                 if let Err(e) = HttpServer::new(move || {
                     App::new()
                         .app_data(manager_data.clone())
-                        .app_data(app_config.clone()) // 注册全局配置
-                        // 公开路由
+                        .app_data(app_config.clone())
+                        // 公开的 API 路由
                         .route("/login", web::post().to(handlers::auth::login))
-                        // 受保护的路由组
+                        // 受保护的 API 路由组
                         .service(
                             web::scope("/api")
                                 .wrap(middleware::jwt::JwtMiddleware)
                                 .service(handlers::auth::profile)
-                                .service(handlers::auth::change_password) // 注册新接口
+                                .service(handlers::auth::change_password)
                                 .service(handlers::udhcpd::service()),
                         )
+                        // --- 关键修改：在这里添加静态文件服务 ---
+                        // 这个服务应该在所有 API 路由之后注册，以避免冲突
+                        .service(fs::Files::new("/", "./static").index_file("index.html"))
                 })
-                .bind(("127.0.0.1", 8080))
+                .bind(("172.16.0.1", 81))
                 .unwrap()
                 .run()
                 .await
