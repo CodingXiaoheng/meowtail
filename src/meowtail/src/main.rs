@@ -14,9 +14,11 @@ mod handlers;
 mod middleware;
 mod models;
 mod udhcpd_manager;
+mod portmap_manager;
 mod config; // 引入新的 config 模块
 
 use crate::udhcpd_manager::UdhcpdManager;
+use crate::portmap_manager::PortMapManager;
 use crate::config::Config;
 
 fn main() {
@@ -86,19 +88,34 @@ fn main() {
                         println!("Configuration file '{}' already exists, using it.", config_path);
                     } else {
                         eprintln!("Failed to create default config file: {}", e);
-                        process::exit(1); 
+                        process::exit(1);
                     }
                 } else {
                     println!("Created default configuration file at '{}'.", config_path);
                 }
-                
+
                 let manager_data = web::Data::new(manager);
+
+                // --- PortMapManager 初始化并载入规则 ---
+                let portmap_path = "./portmap.toml";
+                let portmap_manager = match PortMapManager::new(portmap_path) {
+                    Ok(m) => m,
+                    Err(e) => {
+                        eprintln!("Failed to load port map config: {}", e);
+                        process::exit(1);
+                    }
+                };
+                if let Err(e) = portmap_manager.apply_all() {
+                    eprintln!("Failed to apply port map rules: {}", e);
+                }
+                let portmap_data = web::Data::new(portmap_manager);
 
                 println!("Starting web server at http://127.0.0.1:8080");
 
                 if let Err(e) = HttpServer::new(move || {
                     App::new()
                         .app_data(manager_data.clone())
+                        .app_data(portmap_data.clone())
                         .app_data(app_config.clone())
                         // 公开的 API 路由
                         .route("/login", web::post().to(handlers::auth::login))
@@ -108,7 +125,8 @@ fn main() {
                                 .wrap(middleware::jwt::JwtMiddleware)
                                 .service(handlers::auth::profile)
                                 .service(handlers::auth::change_password)
-                                .service(handlers::udhcpd::service()),
+                                .service(handlers::udhcpd::service())
+                                .service(handlers::portmap::service()),
                         )
                         // --- 关键修改：在这里添加静态文件服务 ---
                         // 这个服务应该在所有 API 路由之后注册，以避免冲突
