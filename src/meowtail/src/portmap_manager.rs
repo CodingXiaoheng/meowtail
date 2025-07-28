@@ -110,11 +110,39 @@ impl PortMapManager {
     }
 
     pub fn set_interface(&self, iface: String) -> io::Result<()> {
+        let old_iface: String;
+        let rules_clone: Vec<PortMapRule>;
+
         {
             let mut cfg = self.config.lock().unwrap();
+
+            // 1. If the interface is not changing, there's nothing to do.
+            if cfg.external_interface == iface {
+                return Ok(());
+            }
+
+            // 2. Store the old interface name and a copy of the rules before changing them.
+            old_iface = cfg.external_interface.clone();
+            rules_clone = cfg.rules.clone();
+
+            // 3. Update the config with the new interface name.
             cfg.external_interface = iface;
+        } // The mutex lock is released here.
+
+        // 4. If an old interface was configured, remove all its rules.
+        //    This prevents leaving orphaned rules in iptables.
+        if !old_iface.is_empty() {
+            for rule in &rules_clone {
+                // Ignore errors during removal, as a rule might already be gone.
+                // This makes the cleanup process more robust.
+                let _ = Self::apply_rule_internal(rule, &old_iface, "-D");
+            }
         }
+
+        // 5. Save the new configuration to the file.
         self.save()?;
+
+        // 6. Apply all rules using the new interface.
         self.apply_all()
     }
 

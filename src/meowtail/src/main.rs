@@ -118,12 +118,12 @@ fn main() {
                         .app_data(portmap_data.clone())
                         .app_data(app_config.clone())
                         // 公开的 API 路由
-                        .route("/login", web::post().to(handlers::auth::login))
+                        .service(handlers::auth::login)
                         // 受保护的 API 路由组
                         .service(
                             web::scope("/api")
                                 .wrap(middleware::jwt::JwtMiddleware)
-                                .service(handlers::auth::profile)
+                                .service(handlers::auth::logined)
                                 .service(handlers::auth::change_password)
                                 .service(handlers::udhcpd::service())
                                 .service(handlers::portmap::service()),
@@ -132,7 +132,7 @@ fn main() {
                         // 这个服务应该在所有 API 路由之后注册，以避免冲突
                         .service(fs::Files::new("/", "./static").index_file("index.html"))
                 })
-                .bind(("172.16.0.1", 81))
+                .bind(("0.0.0.0", 81))
                 .unwrap()
                 .run()
                 .await
