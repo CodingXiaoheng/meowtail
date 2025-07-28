@@ -6,7 +6,6 @@ use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
-// 新增: 引入 Mutex 来解决并发问题
 use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
@@ -161,7 +160,6 @@ pub struct UdhcpdManager {
     executable_path: String,
     config_path: PathBuf,
     pid_path: PathBuf,
-    // 修改: 增加一个互斥锁来保护对配置文件的并发访问
     config_lock: Mutex<()>,
 }
 
@@ -175,7 +173,6 @@ impl UdhcpdManager {
             executable_path: executable_path.to_string(),
             config_path: config_path.into(),
             pid_path: pid_path.into(),
-            // 修改: 初始化互斥锁
             config_lock: Mutex::new(()),
         }
     }
@@ -270,7 +267,6 @@ impl UdhcpdManager {
     }
 
     pub fn create_config_with_defaults(&self, interface: &str, overwrite: bool) -> Result<()> {
-        // 修改: 在修改文件前获取锁
         let _guard = self.config_lock.lock().map_err(|e| UdhcpdError::Process(format!("Failed to acquire config lock: {}", e)))?;
 
         if self.config_path.exists() && !overwrite {
@@ -297,8 +293,6 @@ impl UdhcpdManager {
 
         self.write_config(&default_config)
     }
-
-    // --- 以下所有修改配置的方法都增加了锁保护 ---
 
     pub fn set_dhcp_range(&self, start: Ipv4Addr, end: Ipv4Addr) -> Result<()> {
         let _guard = self.config_lock.lock().map_err(|e| UdhcpdError::Process(format!("Failed to acquire config lock: {}", e)))?;

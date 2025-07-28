@@ -1,0 +1,70 @@
+/* src/app/port-map-manager/port-map-manager.component.css */
+.portmap-container {
+  max-width: 960px;
+  margin: 2rem auto;
+  padding: 1rem;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem;
+}
+
+.error-card {
+  background-color: #f8d7da;
+  color: #721c24;
+  margin-bottom: 1.5rem;
+}
+
+.card {
+  margin-bottom: 1.5rem;
+}
+
+.interface-form,
+.add-rule-form {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.add-rule-form mat-form-field {
+  flex: 1 1 200px; /* Allow form fields to wrap on smaller screens */
+}
+
+.rules-table {
+  width: 100%;
+}
+
+.no-rules {
+  padding: 1rem;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+h1 {
+  color: #000000; /* Material primary color */
+  font-weight: 100;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+mat-card-title {
+  padding: 16px;
+  margin: 0;
+  border-bottom: 1px solid #eee;
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #333;
+}
+
+mat-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Adds space between elements inside the card content */
+  padding: 16px; /* Add padding to all sides */
+}
+

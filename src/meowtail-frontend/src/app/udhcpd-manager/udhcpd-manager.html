@@ -1,0 +1,110 @@
+<mat-toolbar color="primary">
+  <span>UDHCPD Manager</span>
+  <span class="spacer"></span>
+  <button mat-icon-button (click)="reloadStatus()">
+    <mat-icon>refresh</mat-icon>
+  </button>
+  <mat-icon>{{ status ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+</mat-toolbar>
+
+<mat-card>
+  <mat-card-title>Service Control</mat-card-title>
+  <mat-card-content>
+    <button mat-raised-button color="primary" (click)="start()">Start</button>
+    <button mat-raised-button color="warn" (click)="stop()">Stop</button>
+    <button mat-raised-button (click)="restart()">Restart</button>
+  </mat-card-content>
+</mat-card>
+
+<mat-card>
+  <mat-card-title>Configuration</mat-card-title>
+  <mat-card-content>
+    <form [formGroup]="rangeForm" (ngSubmit)="updateRange()">
+      <mat-form-field appearance="outline">
+        <mat-label>Start IP</mat-label>
+        <input matInput formControlName="start" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>End IP</mat-label>
+        <input matInput formControlName="end" />
+      </mat-form-field>
+      <button mat-button type="submit" [disabled]="!rangeForm.valid">Update Range</button>
+    </form>
+    <form [formGroup]="gatewayForm" (ngSubmit)="updateGateway()">
+      <mat-form-field appearance="outline">
+        <mat-label>Gateway</mat-label>
+        <input matInput formControlName="gateway" />
+      </mat-form-field>
+      <button mat-button type="submit" [disabled]="!gatewayForm.valid">Update Gateway</button>
+    </form>
+    <form [formGroup]="subnetForm" (ngSubmit)="updateSubnet()">
+      <mat-form-field appearance="outline">
+        <mat-label>Subnet Mask</mat-label>
+        <input matInput formControlName="subnet" />
+      </mat-form-field>
+      <button mat-button type="submit" [disabled]="!subnetForm.valid">Update Subnet</button>
+    </form>
+    <form [formGroup]="interfaceForm" (ngSubmit)="updateInterface()">
+      <mat-form-field appearance="outline">
+        <mat-label>Interface</mat-label>
+        <input matInput formControlName="interface" />
+      </mat-form-field>
+      <button mat-button type="submit" [disabled]="!interfaceForm.valid">Update Interface</button>
+    </form>
+<form [formGroup]="dnsForm" (ngSubmit)="updateDns()">
+  <div formArrayName="servers">
+    <div *ngFor="let ctrl of servers.controls; let i = index; trackBy: trackByIndex" class="dns-row">
+      <mat-form-field appearance="outline">
+        <mat-label>DNS Server</mat-label>
+        <input matInput [formControlName]="i" />
+      </mat-form-field>
+
+      <button mat-icon-button type="button" (click)="removeDnsField(i)">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <button mat-button type="button" (click)="addDnsField()">Add DNS Server</button>
+  <button mat-button type="submit" [disabled]="!dnsForm.valid">Update DNS</button>
+</form>
+
+  </mat-card-content>
+</mat-card>
+
+<mat-card>
+  <mat-card-title>Static Leases</mat-card-title>
+  <mat-card-content>
+    <form [formGroup]="leaseForm" (ngSubmit)="addLease()">
+      <mat-form-field appearance="outline">
+        <mat-label>MAC Address</mat-label>
+        <input matInput formControlName="mac" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>IP Address</mat-label>
+        <input matInput formControlName="ip" />
+      </mat-form-field>
+      <button mat-button type="submit" [disabled]="!leaseForm.valid">Add Lease</button>
+    </form>
+
+    <table mat-table [dataSource]="leases" class="full-width">
+      <ng-container matColumnDef="mac">
+        <th mat-header-cell *matHeaderCellDef>MAC</th>
+        <td mat-cell *matCellDef="let lease">{{ lease.mac }}</td>
+      </ng-container>
+      <ng-container matColumnDef="ip">
+        <th mat-header-cell *matHeaderCellDef>IP</th>
+        <td mat-cell *matCellDef="let lease">{{ lease.ip }}</td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Actions</th>
+        <td mat-cell *matCellDef="let lease">
+          <button mat-icon-button color="warn" (click)="removeLease(lease.mac)"><mat-icon>delete</mat-icon></button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </mat-card-content>
+</mat-card>

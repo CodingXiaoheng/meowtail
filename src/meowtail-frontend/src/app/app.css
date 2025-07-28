@@ -1,0 +1,22 @@
+.container {
+  height: 100vh;
+}
+
+.sidenav {
+  width: 240px;
+  padding: 16px;
+}
+
+.content {
+  padding: 16px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.title {
+  margin-left: 8px;
+  font-size: 20px;
+  font-weight: 500;
+}

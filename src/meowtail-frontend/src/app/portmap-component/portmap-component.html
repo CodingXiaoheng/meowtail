@@ -1,0 +1,119 @@
+<!-- src/app/port-map-manager/port-map-manager.component.html -->
+<div class="portmap-container">
+  <h1>Port Map Management</h1>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <!-- Error Message -->
+  <mat-card *ngIf="error" class="error-card">
+    <mat-card-content>
+      <strong>Error:</strong> {{ error }}
+    </mat-card-content>
+  </mat-card>
+
+  <div *ngIf="!isLoading && config">
+    <!-- 1. Set Network Interface -->
+    <mat-card class="card">
+      <mat-card-header>
+        <mat-card-title>Network Interface</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form (ngSubmit)="onSetInterface()" class="interface-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Current Interface</mat-label>
+            <input matInput name="interface" [(ngModel)]="currentInterface" required>
+          </mat-form-field>
+          <button mat-raised-button color="primary" type="submit">Update Interface</button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- 2. Existing Rules Table -->
+    <mat-card class="card">
+      <mat-card-header>
+        <mat-card-title>Existing Rules</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div *ngIf="config.rules.length === 0" class="no-rules">
+          No rules have been configured yet.
+        </div>
+        <table mat-table [dataSource]="config.rules" class="rules-table" *ngIf="config.rules.length > 0">
+          <!-- Protocol Column -->
+          <ng-container matColumnDef="protocol">
+            <th mat-header-cell *matHeaderCellDef> Protocol </th>
+            <td mat-cell *matCellDef="let rule"> {{rule.protocol | uppercase}} </td>
+          </ng-container>
+
+          <!-- External Port Column -->
+          <ng-container matColumnDef="external_port">
+            <th mat-header-cell *matHeaderCellDef> External Port </th>
+            <td mat-cell *matCellDef="let rule"> {{rule.external_port}} </td>
+          </ng-container>
+
+          <!-- Internal IP Column -->
+          <ng-container matColumnDef="internal_ip">
+            <th mat-header-cell *matHeaderCellDef> Internal IP </th>
+            <td mat-cell *matCellDef="let rule"> {{rule.internal_ip}} </td>
+          </ng-container>
+
+          <!-- Internal Port Column -->
+          <ng-container matColumnDef="internal_port">
+            <th mat-header-cell *matHeaderCellDef> Internal Port </th>
+            <td mat-cell *matCellDef="let rule"> {{rule.internal_port}} </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef> Actions </th>
+            <td mat-cell *matCellDef="let rule">
+              <button mat-icon-button color="warn" (click)="onDeleteRule(rule)" aria-label="Delete rule">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- 3. Add New Rule Form -->
+    <mat-card class="card">
+      <mat-card-header>
+        <mat-card-title>Add New Rule</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form #ruleForm="ngForm" (ngSubmit)="onAddRule()" class="add-rule-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Protocol</mat-label>
+            <mat-select name="protocol" [(ngModel)]="newRule.protocol">
+              <mat-option value="tcp">TCP</mat-option>
+              <mat-option value="udp">UDP</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>External Port</mat-label>
+            <input matInput name="ext-port" type="number" [(ngModel)]="newRule.external_port" required>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Internal IP</mat-label>
+            <input matInput name="int-ip" type="text" [(ngModel)]="newRule.internal_ip" required>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Internal Port</mat-label>
+            <input matInput name="int-port" type="number" [(ngModel)]="newRule.internal_port" required>
+          </mat-form-field>
+
+          <button mat-raised-button color="primary" type="submit" [disabled]="!ruleForm.valid">Add Rule</button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

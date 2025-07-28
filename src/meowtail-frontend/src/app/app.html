@@ -1,0 +1,32 @@
+<ng-container *ngIf="isLoggedIn | async; else loginTpl">
+  <!-- 已登录：主界面 -->
+  <mat-toolbar color="primary">
+    <button mat-icon-button aria-label="Toggle sidenav" (click)="drawer.toggle()">
+      <mat-icon>menu</mat-icon>
+    </button>
+    <span class="title">Meowtail</span>
+    <span class="spacer"></span>
+    <button mat-icon-button aria-label="Logout" (click)="onLogout()">
+      <mat-icon>logout</mat-icon>
+    </button>
+  </mat-toolbar>
+
+  <mat-drawer-container class="container" autosize>
+    <mat-drawer #drawer mode="side" opened class="sidenav">
+      <nav>
+        <a mat-button routerLink="/home">Home</a>
+        <a mat-button routerLink="/udhcpd">UDHCPD</a>
+        <a mat-button routerLink="/portmap">PortMap</a>
+      </nav>
+    </mat-drawer>
+
+    <mat-drawer-content class="content">
+      <router-outlet></router-outlet>
+    </mat-drawer-content>
+  </mat-drawer-container>
+</ng-container>
+
+<ng-template #loginTpl>
+  <!-- 未登录：展示登录组件 -->
+  <app-login-component></app-login-component>
+</ng-template>

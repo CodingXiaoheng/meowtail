@@ -1,0 +1,50 @@
+<!-- login-component.html -->
+<div class="login-wrapper">
+  <mat-card class="login-card">
+    <mat-card-header>
+      <mat-card-title>登录</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form class="login-form" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>用户名</mat-label>
+          <input
+            matInput
+            name="username"
+            required
+            [(ngModel)]="username"
+            placeholder="请输入用户名" />
+          <mat-icon matSuffix>person</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>密码</mat-label>
+          <input
+            matInput
+            name="password"
+            required
+            [type]="hide ? 'password' : 'text'"
+            [(ngModel)]="password" />
+          <button
+            type="button"
+            mat-icon-button
+            matSuffix
+            (click)="hide = !hide"
+            [attr.aria-label]="'切换密码可见性'"
+            [attr.aria-pressed]="hide">
+            <mat-icon>{{ hide ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <button
+          mat-raised-button
+          color="primary"
+          class="login-button"
+          type="submit">
+          登录
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -1,3 +1,5 @@
+// src/meowtail/src/main.rs
+
 use std::fs::File;
 use std::process;
 use std::env;
@@ -77,6 +79,7 @@ fn main() {
             let sys = actix_web::rt::System::new();
             
             sys.block_on(async {
+                let startup_config = app_config.lock().unwrap().clone();
                 // --- UdhcpdManager 初始化 (保持不变) ---
                 let config_path = "./udhcpd.conf";
                 let pid_path = "/tmp/meowtail_udhcpd.pid";
@@ -95,6 +98,12 @@ fn main() {
                 }
 
                 let manager_data = web::Data::new(manager);
+                if startup_config.udhcpd_enabled {
+                    println!("udhcpd was enabled, attempting to start...");
+                    if let Err(e) = manager_data.start() {
+                        eprintln!("Failed to auto-start udhcpd: {}", e);
+                    }
+                }
 
                 // --- PortMapManager 初始化并载入规则 ---
                 let portmap_path = "./portmap.toml";
@@ -110,7 +119,8 @@ fn main() {
                 }
                 let portmap_data = web::Data::new(portmap_manager);
 
-                println!("Starting web server at http://127.0.0.1:8080");
+                let listen_addr = format!("{}:{}", startup_config.listen_address, startup_config.listen_port);
+                println!("Starting web server at http://{}", listen_addr);
 
                 if let Err(e) = HttpServer::new(move || {
                     App::new()
@@ -132,7 +142,7 @@ fn main() {
                         // 这个服务应该在所有 API 路由之后注册，以避免冲突
                         .service(fs::Files::new("/", "./static").index_file("index.html"))
                 })
-                .bind(("0.0.0.0", 81))
+                .bind(listen_addr)
                 .unwrap()
                 .run()
                 .await

@@ -1,4 +1,4 @@
-// src/config.rs
+// src/meowtail/src/config.rs
 
 use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
@@ -13,6 +13,9 @@ pub struct Config {
     pub admin_username: String,
     pub admin_password_hash: String, // 存储密码的哈希值而非明文
     pub jwt_secret: String,
+    pub listen_address: String,
+    pub listen_port: u16,
+    pub udhcpd_enabled: bool,
 }
 
 impl Config {
@@ -70,6 +73,9 @@ impl Default for Config {
             // 生产环境中应该存储哈希值: e.g., hash("Change_ME")
             admin_password_hash: "Change_ME".to_string(),
             jwt_secret,
+            listen_address: "0.0.0.0".to_string(),
+            listen_port: 81,
+            udhcpd_enabled: true,
         }
     }
 }

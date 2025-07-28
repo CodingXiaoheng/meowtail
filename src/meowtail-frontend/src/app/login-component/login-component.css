@@ -1,0 +1,28 @@
+/* login-component.css */
+:host {
+  display: block;
+  height: 100vh;               /* 占满整个视口高度 */
+}
+
+.login-wrapper {
+  display: flex;
+  justify-content: center;     /* 水平居中 */
+  align-items: center;         /* 垂直居中 */
+  height: 100%;
+  background: #f5f5f5;         /* 浅灰背景，可按需调整 */
+}
+
+.login-card {
+  width: 320px;
+  padding: 16px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;                   /* 元素垂直间距 */
+}
+
+.login-button {
+  margin-top: 8px;
+}
